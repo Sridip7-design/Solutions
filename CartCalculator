@@ -1,0 +1,87 @@
+function applyDiscount(cartTotal, productQuantities) {
+    const discountRules = {
+        flat_10_discount: { condition: cartTotal > 200, value: 10 },
+        bulk_5_discount: { condition: false, value: 0.05 },
+        bulk_10_discount: { condition: false, value: 0.1 },
+        tiered_50_discount: { condition: false, value: 0.5 },
+    };
+
+    let applicableDiscounts = [];
+    for (const rule in discountRules) {
+        const condition = discountRules[rule].condition;
+        if (condition) {
+            const value = discountRules[rule].value;
+            applicableDiscounts.push([rule, value]);
+        }
+    }
+
+    let maxDiscountName = "no_discount";
+    let maxDiscountValue = 0;
+    for (let i = 0; i < applicableDiscounts.length; i++) {
+        if (applicableDiscounts[i][1] > maxDiscountValue) {
+            maxDiscountName = applicableDiscounts[i][0];
+            maxDiscountValue = applicableDiscounts[i][1];
+        }
+    }
+
+    return { discountName: maxDiscountName, discountAmount: maxDiscountValue };
+}
+
+function calculateTotalCost(productQuantities, giftWrapFee, shippingFeePerPackage) {
+    let subtotal = 0;
+    for (const price in productQuantities) {
+        subtotal += price * productQuantities[price];
+    }
+
+    let cartTotal = subtotal;
+    for (const price in productQuantities) {
+        cartTotal += productQuantities[price] * giftWrapFee;
+    }
+
+    const { discountName, discountAmount } = applyDiscount(cartTotal, productQuantities);
+
+    let total = cartTotal - discountAmount;
+    let packages = 0;
+    for (const price in productQuantities) {
+        packages += Math.ceil(productQuantities[price] / 10);
+    }
+    total += shippingFeePerPackage * packages;
+
+    return { subtotal, discountName, discountAmount, total };
+}
+
+function main() {
+    const productPrices = { "Product A": 20, "Product B": 40, "Product C": 50 };
+    const productQuantities = {};
+    const giftWrapFee = 1;
+    const shippingFeePerPackage = 5;
+
+    for (const product in productPrices) {
+        const price = productPrices[product];
+        const quantity = parseInt(prompt(`Enter quantity for ${product}:`), 10);
+        const isGiftWrapped = prompt(`Is ${product} wrapped as a gift? (yes/no):`).toLowerCase() === "yes";
+        productQuantities[price] = isGiftWrapped ? quantity + giftWrapFee : quantity;
+    }
+
+    const { subtotal, discountName, discountAmount, total } = calculateTotalCost(productQuantities, giftWrapFee, shippingFeePerPackage);
+
+    console.log("\nProduct Details:");
+    for (const price in productQuantities) {
+        console.log(`${price}: ${productQuantities[price]} units - Total: $${price * productQuantities[price]}`);
+    }
+
+    console.log(`\nSubtotal: $${subtotal}`);
+    console.log(`Discount Applied: ${discountName} - Amount: $${discountAmount}`);
+    console.log(`Shipping Fee: $${shippingFeePerPackage * Math.ceil(sum(productQuantities) / 10)}`);
+    console.log(`Total: $${total}`);
+}
+
+function sum(obj) {
+    let s = 0;
+    for (const key in obj) {
+        s += obj[key];
+    }
+    return s;
+}
+
+main();
